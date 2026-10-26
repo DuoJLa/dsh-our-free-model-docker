@@ -23,7 +23,8 @@ RUN git init /src \
  && git fetch --depth 1 origin "$OFM_SOURCE_REF" \
  && git checkout --detach FETCH_HEAD \
  && test -f scripts/prepare-desktop.mjs \
- && test -f packages/standalone/service.mjs
+ && test -f packages/standalone/service.mjs \
+ && rm -rf /src/.git
 
 FROM node:22-bookworm-slim AS stage
 COPY --from=source /src /src
