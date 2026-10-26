@@ -100,10 +100,14 @@ ensure_env() {
     lan=$(gen_token)
     bind=${OFM_BIND_IP:-0.0.0.0}
     tz=${TZ:-Asia/Shanghai}
+    source_repo=${OFM_SOURCE_REPO:-https://github.com/Ebony-Vinyl/dsh-our-free-model.git}
+    source_ref=${OFM_SOURCE_REF:-v2.7.2}
     umask 077
     {
       echo "TZ=$tz"
       echo "OFM_BIND_IP=$bind"
+      echo "OFM_SOURCE_REPO=$source_repo"
+      echo "OFM_SOURCE_REF=$source_ref"
       echo "OFM_MANAGEMENT_KEY=$mgmt"
       echo "OFM_LAN_KEY=$lan"
     } > "$ENV_FILE"
