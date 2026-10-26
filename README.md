@@ -1,8 +1,10 @@
 # dsh-our-free-model-docker
 
+![image build](https://github.com/DuoJLa/dsh-our-free-model-docker/actions/workflows/image.yml/badge.svg)
+
 One-command Docker deployment for **dsh-our-free-model** (standalone service + WebUI + LAN API).
 
-This repository contains **only deployment files**. At image build time the
+This repository contains **only deployment files**. GitHub Actions builds the default image and runs an end-to-end smoke test (WebUI, management login, API 401/200) on every push. At image build time the
 Dockerfile clones the upstream source at a pinned ref (`v2.7.2` by default), so
 the upstream source tree, model binaries, and secrets are not stored here.
 
