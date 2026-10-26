@@ -1,0 +1,15 @@
+# Host-level Caddy example for the compose.lan.yaml topology.
+# Caddy listens on 80/443 on the Docker host and proxies to the published
+# container ports. No header rewriting is needed here: the container's
+# ui-proxy.mjs already rewrites Host/Origin for the service's loopback fence.
+#
+# Replace the hostnames. Caddy obtains TLS certificates automatically.
+ofm.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8080
+}
+
+api.ofm.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:18901
+}

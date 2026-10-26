@@ -1,0 +1,62 @@
+name: ofm
+services:
+  ofm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        OFM_SOURCE_REPO: "${OFM_SOURCE_REPO:-https://github.com/Ebony-Vinyl/dsh-our-free-model.git}"
+        OFM_SOURCE_REF: "${OFM_SOURCE_REF:-v2.7.2}"
+    image: ofm-standalone:2.7.2
+    container_name: ofm
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2.0
+    ports:
+      # Web UI (management) — log in with OFM_MANAGEMENT_KEY.
+      - "${OFM_BIND_IP:-0.0.0.0}:8080:8080"
+      # OpenAI/Anthropic-compatible API — Bearer OFM_LAN_KEY.
+      - "${OFM_BIND_IP:-0.0.0.0}:18901:18901"
+    environment:
+      OFM_HOME: /data
+      HOME: /data/home
+      OFM_PORT: "18900"
+      OFM_LAN: "1"
+      OFM_LAN_PORT: "18901"
+      OFM_UI_PORT: "8080"
+      OFM_UI_BIND: "0.0.0.0"
+      OFM_REFRESH: "1"
+      OFM_CLEAR_STALE_LOCK: "1"
+      TZ: "${TZ:-Asia/Shanghai}"
+      NODE_OPTIONS: "--max-old-space-size=1536"
+      OFM_MANAGEMENT_KEY: "${OFM_MANAGEMENT_KEY:?set OFM_MANAGEMENT_KEY in docker/.env}"
+      OFM_LAN_KEY: "${OFM_LAN_KEY:?set OFM_LAN_KEY in docker/.env}"
+      OFM_UI_BASIC_AUTH: "${OFM_UI_BASIC_AUTH:-}"
+    volumes:
+      - ofm-data:/data
+      # Optional native subscription credentials, read-only:
+      # - ${HOME}/.codex:/data/home/.codex:ro
+      # - ${HOME}/.claude:/data/home/.claude:ro
+      # - ${HOME}/.gemini:/data/home/.gemini:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:18900/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  ofm-data:
+    name: ofm-data

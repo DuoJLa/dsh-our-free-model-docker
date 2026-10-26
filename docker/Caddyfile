@@ -1,0 +1,30 @@
+# Host-level Caddy example (run Caddy on the Docker host, not in a bridge container).
+# Replace ofm.example.com and the password hash.
+#
+#   caddy hash-password --plaintext 'change-me'
+#
+# The management branch rewrites Host and drops browser provenance headers so
+# the service's loopback trust fence accepts the proxied request. The login
+# terminal button is Linux-unsupported in any case; everything else works.
+# The /v1 branch has no Basic Auth here: it relies on the LAN relay key.
+# Set a non-empty LAN key before exposing this host; add mTLS/IP allowlist if public.
+ofm.example.com {
+	encode zstd gzip
+
+	@api path /v1/*
+	handle @api {
+		reverse_proxy 127.0.0.1:18901
+	}
+
+	handle {
+		basic_auth {
+			admin $2a$14$REPLACE_WITH_CADDY_HASH
+		}
+		reverse_proxy 127.0.0.1:18900 {
+			header_up Host 127.0.0.1:18900
+			header_up -Origin
+			header_up -Referer
+			header_up -Sec-Fetch-Site
+		}
+	}
+}

@@ -1,0 +1,6 @@
+.env
+docker/.env
+docker/credentials.txt
+data/
+backup/
+.ofm-src/

@@ -1,0 +1,55 @@
+name: ofm-api
+services:
+  ofm:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      args:
+        OFM_SOURCE_REPO: "${OFM_SOURCE_REPO:-https://github.com/Ebony-Vinyl/dsh-our-free-model.git}"
+        OFM_SOURCE_REF: "${OFM_SOURCE_REF:-v2.7.2}"
+    image: ofm-standalone:2.7.2
+    container_name: ofm-api
+    # API-only profile: LAN relay published; management stays on container
+    # loopback and is therefore NOT reachable from outside. Use this only when
+    # the API key/settings are already prepared in the volume, or when you
+    # manage the instance from inside the container.
+    network_mode: bridge
+    ports:
+      - "0.0.0.0:18901:18901"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 2g
+    cpus: 2.0
+    environment:
+      OFM_HOME: /data
+      HOME: /data/home
+      OFM_PORT: "18900"
+      OFM_LAN: "1"
+      OFM_LAN_PORT: "18901"
+      OFM_REFRESH: "1"
+      OFM_CLEAR_STALE_LOCK: "1"
+      TZ: "${TZ:-Asia/Shanghai}"
+      NODE_OPTIONS: "--max-old-space-size=1536"
+    volumes:
+      - ofm-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:18900/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  ofm-data:
+    name: ofm-data
