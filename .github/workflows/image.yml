@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  build-default:
+  build-and-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +20,41 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: false
+          load: true
           tags: ofm-standalone:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Smoke test WebUI and API
+        run: |
+          set -eu
+          docker run -d --name ofm-ci \
+            -p 18080:8080 -p 18901:18901 \
+            -e OFM_REFRESH=0 \
+            -e OFM_MANAGEMENT_KEY=ci-management-key-123456 \
+            -e OFM_LAN_KEY=ci-lan-key-123456 \
+            ofm-standalone:ci
+
+          ok=0
+          for i in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:18080/health >/dev/null 2>&1; then ok=1; break; fi
+            sleep 1
+          done
+          [ "$ok" = "1" ] || { docker logs ofm-ci; exit 1; }
+
+          curl -fsS http://127.0.0.1:18080/health
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:18901/v1/models)" = "401"
+          curl -fsS -H 'Authorization: Bearer ci-lan-key-123456' \
+            http://127.0.0.1:18901/v1/models >/dev/null
+          curl -fsS -c /tmp/ofm-ci-cookies \
+            -X POST http://127.0.0.1:18080/api/management/session \
+            -H 'content-type: application/json' \
+            -d '{"key":"ci-management-key-123456"}' >/dev/null
+          curl -fsS -b /tmp/ofm-ci-cookies \
+            http://127.0.0.1:18080/api/management/summary >/dev/null
+          echo "smoke OK"
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs ofm-ci || true
+      - name: Cleanup
+        if: always()
+        run: docker rm -f ofm-ci || true
