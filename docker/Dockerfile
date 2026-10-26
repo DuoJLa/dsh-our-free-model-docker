@@ -38,10 +38,8 @@ RUN node --input-type=module -e "import('./scripts/prepare-desktop.mjs').then(m 
 
 FROM node:22-bookworm-slim AS runtime
 RUN apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl tini tzdata passwd \
- && rm -rf /var/lib/apt/lists/* \
- && groupadd --gid 1000 ofm \
- && useradd --uid 1000 --gid ofm --home-dir /data/home --shell /bin/sh ofm
+ && apt-get install -y --no-install-recommends ca-certificates curl tini tzdata \
+ && rm -rf /var/lib/apt/lists/*
 
 COPY --from=stage /out/service /app
 COPY docker/serve.mjs /app/docker/serve.mjs
@@ -49,7 +47,7 @@ COPY docker/ui-proxy.mjs /app/docker/ui-proxy.mjs
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod 0755 /entrypoint.sh \
  && mkdir -p /data/home \
- && chown -R ofm:ofm /app /data
+ && chown -R node:node /app /data
 
 ENV OFM_HOME=/data \
     HOME=/data/home \
@@ -60,7 +58,7 @@ ENV OFM_HOME=/data \
     OFM_LAN_PORT=18901
 
 WORKDIR /app
-USER ofm
+USER node
 EXPOSE 18900 18901
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
